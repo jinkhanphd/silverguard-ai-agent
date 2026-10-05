@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="SilverGuard - 독거노인 실시간 위기알림 AI Agent, 경진대회용 Level 3 MVP">
+  <title>SilverGuard - 독거노인 위기알림 AI Agent</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<header>
+  <div class="badge">AI·SW 경진대회 2026 · GitHub Edition v1.0</div>
+  <h1>SilverGuard — 독거노인 실시간 위기알림 AI Agent</h1>
+  <p>상태 입력 → 이상징후 분석 → 위험도 판단 → 알림 Tool 실행 → 보호자 확인 → 사건 상태 갱신</p>
+</header>
+
+<div class="wrap">
+  <div class="grid">
+    <section class="card">
+      <h2>1. 상태 데이터 입력</h2>
+      <div class="pad">
+        <label>대상자 이름</label>
+        <input id="name" value="김OO 어르신">
+        <div class="row">
+          <div><label>미활동 시간(분)</label><input id="inactive" type="number" value="30"></div>
+          <div><label>심박수(bpm)</label><input id="heart" type="number" value="76"></div>
+        </div>
+        <div class="row">
+          <div><label>현재 시간대</label><select id="night"><option value="0">주간</option><option value="1">야간(22~06시)</option></select></div>
+          <div><label>현관문 상태</label><select id="door"><option value="0">닫힘</option><option value="1">열림/이벤트 발생</option></select></div>
+        </div>
+        <div class="row">
+          <div><label>집 밖 위치 감지</label><select id="outside"><option value="0">아니오</option><option value="1">예</option></select></div>
+          <div><label>사용자 응답</label><select id="response"><option value="1">응답함</option><option value="0">응답 없음</option></select></div>
+        </div>
+        <label>비고/상황 메모</label>
+        <textarea id="memo" rows="3" placeholder="예: 평소 아침 산책 시간인데 움직임 없음"></textarea>
+        <div class="actions">
+          <button class="primary" onclick="analyze()">AI Agent 분석 실행</button>
+          <button class="secondary" onclick="requestNotify()">브라우저 알림 허용</button>
+          <button class="dangerbtn" onclick="resetAll()">기록 초기화</button>
+        </div>
+        <div class="notice"><b>경진대회용 MVP</b><br>의료진단을 수행하지 않습니다. 실제 응급상황에서는 119·보호자·복지기관의 판단과 대응이 우선입니다.</div>
+      </div>
+    </section>
+
+    <main>
+      <section class="card">
+        <h2>2. AI Agent 판단 결과</h2>
+        <div class="pad">
+          <div class="heroStatus">
+            <div id="statusBox" class="statusBox neutral">
+              <div class="big" id="statusText">대기</div>
+              <div class="score" id="scoreText">0 / 100</div>
+              <div style="margin-top:6px;font-size:13px" id="timeText">분석 전</div>
+            </div>
+            <div class="reason">
+              <h3>판단 근거 및 행동 계획</h3>
+              <div id="reasonText">왼쪽에서 상태 값을 입력하고 <b>AI Agent 분석 실행</b>을 누르세요.</div>
+              <div class="pills" id="pills"></div>
+              <div class="actions">
+                <button class="secondary" onclick="confirmLatest()">보호자 확인 / 조치완료</button>
+                <button class="secondary" onclick="retryAlert()">미확인 재알림</button>
+              </div>
+            </div>
+          </div>
+
+          <h3 style="color:#0a2f6b;margin:18px 0 7px">End-to-End Workflow</h3>
+          <div class="flow">
+            <div class="step"><b>① Goal</b><small>독거노인 위험상황을 조기 감지하고 보호자에게 알림</small></div>
+            <div class="step"><b>② Data</b><small>미활동·심박·야간·문열림·외출·응답 데이터</small></div>
+            <div class="step"><b>③ Reasoning</b><small>기준선 편차 + 복합 위험규칙 + 위험점수 산정</small></div>
+            <div class="step"><b>④ Tool Use</b><small>Browser Notification API로 로컬 브라우저/OS 알림 실행</small></div>
+            <div class="step"><b>⑤ Memory</b><small>사건·판정·확인여부를 브라우저 LocalStorage에 저장</small></div>
+            <div class="step"><b>⑥ Feedback</b><small>보호자 확인 또는 미확인 재알림으로 상태 갱신</small></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card" style="margin-top:18px">
+        <h2>3. 원클릭 Test Case</h2>
+        <div class="pad tests">
+          <button class="testbtn" onclick="loadCase(1)"><b>TC1 정상</b><br><span class="small">미활동 20분 / 심박 74 / 응답함</span></button>
+          <button class="testbtn" onclick="loadCase(2)"><b>TC2 장시간 미활동</b><br><span class="small">미활동 210분 / 응답함</span></button>
+          <button class="testbtn" onclick="loadCase(3)"><b>TC3 심박 이상 + 무응답</b><br><span class="small">심박 122 / 응답 없음</span></button>
+          <button class="testbtn" onclick="loadCase(4)"><b>TC4 야간 외출</b><br><span class="small">야간 / 문열림 / 집 밖 위치</span></button>
+          <button class="testbtn" onclick="loadCase(5)"><b>TC5 복합 고위험</b><br><span class="small">미활동 300분 + 심박 128 + 무응답</span></button>
+          <button class="testbtn" onclick="loadCase(6)"><b>TC6 데이터 누락/비정상</b><br><span class="small">심박 0 → 데이터 품질 오류 처리</span></button>
+        </div>
+      </section>
+
+      <section class="card" style="margin-top:18px">
+        <h2>4. 사건 이력 / Memory</h2>
+        <div class="pad">
+          <div class="actions" style="margin:0 0 10px">
+            <button class="secondary" onclick="exportJSON()">사건기록 JSON 내보내기</button>
+            <button class="secondary" onclick="runAllTests()">전체 Test Case 자동실행</button>
+          </div>
+          <div class="tableWrap">
+            <table>
+              <thead><tr><th>시간</th><th>대상자</th><th>등급</th><th>점수</th><th>판단근거</th><th>알림</th><th>확인</th></tr></thead>
+              <tbody id="logBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+<footer>SilverGuard GitHub Edition v1.0 · HTML/CSS/Vanilla JavaScript · 서버 설치 불필요 · 경진대회/교육용 MVP</footer>
+
+<script src="src/js/risk-engine.js"></script>
+<script src="src/js/storage.js"></script>
+<script src="src/js/notification.js"></script>
+<script src="src/js/test-cases.js"></script>
+<script src="src/js/app.js"></script>
+</body>
+</html>

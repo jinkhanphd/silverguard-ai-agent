@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SilverGuard - 독거노인 위기알림 AI Agent</title>
+<style>
+:root{
+  --navy:#0a2f6b; --blue:#1559c5; --sky:#eaf4ff; --line:#c9dcf6;
+  --ok:#178a55; --warn:#d78a00; --danger:#d83232; --ink:#14233a; --muted:#65758b;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Malgun Gothic","Noto Sans KR",Arial,sans-serif;background:#f4f8fd;color:var(--ink)}
+header{background:linear-gradient(135deg,#061d49,#0c57c8);color:white;padding:24px 26px}
+header h1{margin:0;font-size:32px}
+header p{margin:8px 0 0;opacity:.9}
+.badge{display:inline-block;padding:5px 10px;border-radius:999px;background:#72e7ff;color:#07355e;font-weight:800;font-size:13px;margin-bottom:10px}
+.wrap{max-width:1450px;margin:auto;padding:18px}
+.grid{display:grid;grid-template-columns:390px 1fr;gap:18px}
+@media(max-width:980px){.grid{grid-template-columns:1fr}}
+.card{background:white;border:1px solid var(--line);border-radius:16px;box-shadow:0 8px 24px rgba(18,58,115,.08);overflow:hidden}
+.card h2{margin:0;padding:15px 18px;background:#eef5ff;color:var(--navy);font-size:20px;border-bottom:1px solid var(--line)}
+.pad{padding:17px}
+label{display:block;font-size:13px;font-weight:800;color:#324766;margin:10px 0 5px}
+input,select,textarea{width:100%;padding:10px 11px;border:1px solid #b9cde9;border-radius:9px;background:white;font:inherit}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+button{border:0;border-radius:10px;padding:11px 15px;font-weight:800;cursor:pointer}
+.primary{background:var(--blue);color:white}
+.secondary{background:#e8f1ff;color:#174a97}
+.dangerbtn{background:#ffeaea;color:#a61e1e}
+button:hover{filter:brightness(.98)}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.heroStatus{display:grid;grid-template-columns:220px 1fr;gap:16px;align-items:stretch}
+@media(max-width:760px){.heroStatus{grid-template-columns:1fr}}
+.statusBox{border-radius:15px;color:white;padding:18px;display:flex;flex-direction:column;justify-content:center;min-height:160px}
+.statusBox .big{font-size:36px;font-weight:900}
+.statusBox .score{font-size:25px;font-weight:900;margin-top:6px}
+.normal{background:linear-gradient(135deg,#0e8b57,#37b579)}
+.warning{background:linear-gradient(135deg,#bd7200,#f1a01e)}
+.danger{background:linear-gradient(135deg,#ae1f24,#e04a48)}
+.neutral{background:linear-gradient(135deg,#34577d,#6788aa)}
+.reason{background:#f8fbff;border:1px solid var(--line);border-radius:15px;padding:16px}
+.reason h3{margin:0 0 8px;color:var(--navy)}
+.pills{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}
+.pill{background:#eef5ff;border:1px solid #cfe1fa;border-radius:999px;padding:6px 10px;font-size:12px;font-weight:800}
+.flow{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-top:12px}
+@media(max-width:1100px){.flow{grid-template-columns:repeat(3,1fr)}}
+.step{background:#f8fbff;border:1px solid var(--line);border-radius:12px;padding:12px;min-height:104px}
+.step b{display:block;color:var(--blue);font-size:13px;margin-bottom:5px}
+.step small{color:var(--muted);line-height:1.45}
+.tableWrap{overflow:auto}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{border-bottom:1px solid #dbe7f7;padding:9px;text-align:left;vertical-align:top}
+th{background:#f1f6fd;color:#27466d}
+.tag{display:inline-block;border-radius:999px;padding:3px 7px;font-weight:800;font-size:11px}
+.tag.NORMAL{background:#e6f7ef;color:#157a4a}.tag.WARNING{background:#fff4dc;color:#a76600}.tag.DANGER{background:#ffe5e5;color:#b22b2b}
+.notice{padding:12px 14px;border-radius:10px;background:#fff8dd;border-left:5px solid #f0b429;margin-top:12px;font-size:13px;line-height:1.55}
+.small{font-size:12px;color:var(--muted);line-height:1.5}
+.tests{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+@media(max-width:760px){.tests{grid-template-columns:1fr}}
+.testbtn{background:#f3f7fd;border:1px solid #d6e4f7;text-align:left;color:#173f77}
+footer{max-width:1450px;margin:0 auto;padding:0 18px 28px;color:#728199;font-size:12px}
+</style>
+</head>
+<body>
+<header>
+  <div class="badge">AI·SW 경진대회 2026 · OFFLINE MVP</div>
+  <h1>SilverGuard — 독거노인 실시간 위기알림 AI Agent</h1>
+  <p>상태 입력 → 이상징후 분석 → 위험도 판단 → 알림 Tool 실행 → 보호자 확인 → 사건 상태 갱신</p>
+</header>
+
+<div class="wrap">
+  <div class="grid">
+    <section class="card">
+      <h2>1. 상태 데이터 입력</h2>
+      <div class="pad">
+        <label>대상자 이름</label>
+        <input id="name" value="김OO 어르신">
+        <div class="row">
+          <div><label>미활동 시간(분)</label><input id="inactive" type="number" value="30"></div>
+          <div><label>심박수(bpm)</label><input id="heart" type="number" value="76"></div>
+        </div>
+        <div class="row">
+          <div><label>현재 시간대</label>
+            <select id="night"><option value="0">주간</option><option value="1">야간(22~06시)</option></select>
+          </div>
+          <div><label>현관문 상태</label>
+            <select id="door"><option value="0">닫힘</option><option value="1">열림/이벤트 발생</option></select>
+          </div>
+        </div>
+        <div class="row">
+          <div><label>집 밖 위치 감지</label>
+            <select id="outside"><option value="0">아니오</option><option value="1">예</option></select>
+          </div>
+          <div><label>사용자 응답</label>
+            <select id="response"><option value="1">응답함</option><option value="0">응답 없음</option></select>
+          </div>
+        </div>
+        <label>비고/상황 메모</label>
+        <textarea id="memo" rows="3" placeholder="예: 평소 아침 산책 시간인데 움직임 없음"></textarea>
+        <div class="actions">
+          <button class="primary" onclick="analyze()">AI Agent 분석 실행</button>
+          <button class="secondary" onclick="requestNotify()">브라우저 알림 허용</button>
+          <button class="dangerbtn" onclick="resetAll()">기록 초기화</button>
+        </div>
+        <div class="notice">
+          <b>경진대회용 MVP</b><br>
+          의료진단을 수행하지 않습니다. 실제 응급상황에서는 119·보호자·복지기관의 판단과 대응이 우선입니다.
+        </div>
+      </div>
+    </section>
+
+    <main>
+      <section class="card">
+        <h2>2. AI Agent 판단 결과</h2>
+        <div class="pad">
+          <div class="heroStatus">
+            <div id="statusBox" class="statusBox neutral">
+              <div class="big" id="statusText">대기</div>
+              <div class="score" id="scoreText">0 / 100</div>
+              <div style="margin-top:6px;font-size:13px" id="timeText">분석 전</div>
+            </div>
+            <div class="reason">
+              <h3>판단 근거 및 행동 계획</h3>
+              <div id="reasonText">왼쪽에서 상태 값을 입력하고 <b>AI Agent 분석 실행</b>을 누르세요.</div>
+              <div class="pills" id="pills"></div>
+              <div class="actions">
+                <button class="secondary" onclick="confirmLatest()">보호자 확인 / 조치완료</button>
+                <button class="secondary" onclick="retryAlert()">미확인 재알림</button>
+              </div>
+            </div>
+          </div>
+
+          <h3 style="color:#0a2f6b;margin:18px 0 7px">End-to-End Workflow</h3>
+          <div class="flow">
+            <div class="step"><b>① Goal</b><small>독거노인 위험상황을 조기 감지하고 보호자에게 알림</small></div>
+            <div class="step"><b>② Data</b><small>미활동·심박·야간·문열림·외출·응답 데이터</small></div>
+            <div class="step"><b>③ Reasoning</b><small>기준선 편차 + 복합 위험규칙 + 위험점수 산정</small></div>
+            <div class="step"><b>④ Tool Use</b><small>Browser Notification API로 실제 알림 실행</small></div>
+            <div class="step"><b>⑤ Memory</b><small>사건·판정·확인여부를 브라우저 LocalStorage에 저장</small></div>
+            <div class="step"><b>⑥ Feedback</b><small>보호자 확인 또는 미확인 재알림으로 상태 갱신</small></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card" style="margin-top:18px">
+        <h2>3. 원클릭 Test Case</h2>
+        <div class="pad tests">
+          <button class="testbtn" onclick="loadCase(1)"><b>TC1 정상</b><br><span class="small">미활동 20분 / 심박 74 / 응답함</span></button>
+          <button class="testbtn" onclick="loadCase(2)"><b>TC2 장시간 미활동</b><br><span class="small">미활동 210분 / 응답함</span></button>
+          <button class="testbtn" onclick="loadCase(3)"><b>TC3 심박 이상 + 무응답</b><br><span class="small">심박 122 / 응답 없음</span></button>
+          <button class="testbtn" onclick="loadCase(4)"><b>TC4 야간 외출</b><br><span class="small">야간 / 문열림 / 집 밖 위치</span></button>
+          <button class="testbtn" onclick="loadCase(5)"><b>TC5 복합 고위험</b><br><span class="small">미활동 300분 + 심박 128 + 무응답</span></button>
+          <button class="testbtn" onclick="loadCase(6)"><b>TC6 데이터 누락/비정상</b><br><span class="small">심박 0 → 데이터 품질 오류 처리</span></button>
+        </div>
+      </section>
+
+      <section class="card" style="margin-top:18px">
+        <h2>4. 사건 이력 / Memory</h2>
+        <div class="pad">
+          <div class="actions" style="margin:0 0 10px">
+            <button class="secondary" onclick="exportJSON()">사건기록 JSON 내보내기</button>
+            <button class="secondary" onclick="runAllTests()">전체 Test Case 자동실행</button>
+          </div>
+          <div class="tableWrap">
+            <table>
+              <thead><tr><th>시간</th><th>대상자</th><th>등급</th><th>점수</th><th>판단근거</th><th>알림</th><th>확인</th></tr></thead>
+              <tbody id="logBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+<footer>
+  SilverGuard Offline v0.3 · Python/서버 설치 불필요 · Chrome/Edge에서 HTML 파일을 더블클릭하여 실행
+</footer>
+
+<script>
+const KEY="silverguard_events_v03";
+let events=JSON.parse(localStorage.getItem(KEY)||"[]");
+let latestId=null;
+
+const $=id=>document.getElementById(id);
+function num(id){ return Number($(id).value); }
+function now(){ return new Date().toLocaleString("ko-KR"); }
+
+function baselineAnomaly(inactive, heart){
+  // 교육용 단순 통계 이상치: 기준 미활동 35±45분, 심박 75±18 bpm
+  const zInactive=Math.abs((inactive-35)/45);
+  const zHeart=Math.abs((heart-75)/18);
+  return Math.min(25, (zInactive*5)+(zHeart*6));
+}
+
+function analyze(silent=false){
+  const data={
+    name:$("name").value.trim()||"대상자",
+    inactive:num("inactive"),
+    heart:num("heart"),
+    night:num("night"),
+    door:num("door"),
+    outside:num("outside"),
+    response:num("response"),
+    memo:$("memo").value.trim()
+  };
+
+  if(!Number.isFinite(data.inactive) || data.inactive<0 || !Number.isFinite(data.heart) || data.heart<=0 || data.heart>240){
+    renderResult("WARNING", 25, ["데이터 품질 오류 또는 누락"], "센서/입력값을 재확인하고 유효 데이터 확보 후 재분석합니다.", false);
+    if(!silent) saveEvent(data,"WARNING",25,["데이터 품질 오류 또는 누락"],"NOT_SENT","재확인 필요");
+    return;
+  }
+
+  let score=0; const reasons=[]; const actions=[];
+  const anomaly=baselineAnomaly(data.inactive,data.heart);
+
+  if(data.inactive>=180){score+=28; reasons.push("3시간 이상 장시간 미활동");}
+  else if(data.inactive>=120){score+=18; reasons.push("2시간 이상 미활동");}
+  else if(data.inactive>=60){score+=8; reasons.push("평소보다 긴 미활동");}
+
+  if(data.heart>=120 || data.heart<=45){score+=30; reasons.push("심박수 고위험 범위");}
+  else if(data.heart>=105 || data.heart<=55){score+=16; reasons.push("심박수 주의 범위");}
+
+  if(data.night && data.door){score+=12; reasons.push("야간 현관문 이벤트");}
+  if(data.night && data.outside){score+=18; reasons.push("야간 외부 위치 감지");}
+  if(!data.response){score+=20; reasons.push("사용자 응답 없음");}
+  score+=anomaly;
+  if(anomaly>=14) reasons.push("기준선 대비 통계적 이상징후");
+
+  if(data.inactive>=180 && !data.response) {score+=8; reasons.push("미활동+무응답 복합위험");}
+  if((data.heart>=120 || data.heart<=45) && !data.response){score+=8; reasons.push("심박이상+무응답 복합위험");}
+  score=Math.min(100, Math.round(score*10)/10);
+
+  let level="NORMAL";
+  if(score>=60) level="DANGER";
+  else if(score>=30) level="WARNING";
+
+  if(level==="DANGER"){
+    actions.push("즉시 보호자 알림");
+    actions.push("복지기관/담당자 확인 권고");
+    actions.push("미확인 시 재알림");
+  }else if(level==="WARNING"){
+    actions.push("보호자에게 주의 알림");
+    actions.push("30분 이내 상태 재확인");
+  }else{
+    actions.push("정상 상태 기록");
+    actions.push("지속 모니터링");
+  }
+
+  const actionText=actions.join(" → ");
+  const notified = (level!=="NORMAL") ? sendBrowserAlert(data.name,level,score,reasons) : false;
+  renderResult(level,score,reasons,actionText,notified);
+  if(!silent) saveEvent(data,level,score,reasons,notified?"SENT":"LOCAL_LOG","미확인");
+}
+
+function renderResult(level,score,reasons,actionText,notified){
+  $("statusBox").className="statusBox "+(level==="NORMAL"?"normal":level==="WARNING"?"warning":"danger");
+  $("statusText").textContent=level;
+  $("scoreText").textContent=score+" / 100";
+  $("timeText").textContent=now();
+  $("reasonText").innerHTML="<b>판단:</b> "+(reasons.length?reasons.join(", "):"특이 위험징후 없음")+"<br><br><b>행동 계획:</b> "+actionText;
+  $("pills").innerHTML=[
+    "Goal 이해","Reasoning","Tool Use","Memory/State","Feedback",
+    notified?"실제 브라우저 알림 실행":"로컬 사건기록"
+  ].map(x=>'<span class="pill">'+x+'</span>').join("");
+}
+
+function saveEvent(data,level,score,reasons,notifyStatus,confirmStatus){
+  const ev={
+    id:Date.now()+"_"+Math.random().toString(16).slice(2),
+    time:now(),data,level,score,reasons,
+    notifyStatus,confirmStatus
+  };
+  events.unshift(ev); latestId=ev.id; persist(); renderLog();
+}
+
+function persist(){ localStorage.setItem(KEY,JSON.stringify(events)); }
+
+function sendBrowserAlert(name,level,score,reasons){
+  const body=`${level} ${score}점\n${reasons.slice(0,2).join(" / ")}`;
+  if("Notification" in window && Notification.permission==="granted"){
+    new Notification("SilverGuard 위기 알림 - "+name,{body});
+    return true;
+  }
+  return false;
+}
+
+async function requestNotify(){
+  if(!("Notification" in window)){ alert("이 브라우저는 알림 기능을 지원하지 않습니다."); return; }
+  const p=await Notification.requestPermission();
+  alert(p==="granted"?"브라우저 알림이 허용되었습니다.":"알림 권한이 허용되지 않았습니다.");
+}
+
+function confirmLatest(){
+  if(!events.length){alert("확인할 사건이 없습니다.");return;}
+  const ev=latestId?events.find(x=>x.id===latestId):events[0];
+  if(!ev){return;}
+  ev.confirmStatus="보호자 확인/조치완료";
+  persist();renderLog();
+  alert("사건 상태를 '보호자 확인/조치완료'로 변경했습니다.");
+}
+
+function retryAlert(){
+  if(!events.length){alert("재알림할 사건이 없습니다.");return;}
+  const ev=latestId?events.find(x=>x.id===latestId):events[0];
+  sendBrowserAlert(ev.data.name,ev.level,ev.score,ev.reasons);
+  ev.notifyStatus="RETRY_SENT";
+  persist();renderLog();
+}
+
+function renderLog(){
+  $("logBody").innerHTML=events.map(e=>`<tr>
+    <td>${e.time}</td><td>${esc(e.data.name)}</td>
+    <td><span class="tag ${e.level}">${e.level}</span></td>
+    <td>${e.score}</td><td>${esc(e.reasons.join(", "))}</td>
+    <td>${e.notifyStatus}</td><td>${e.confirmStatus}</td>
+  </tr>`).join("");
+}
+function esc(s){return String(s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+
+function loadCase(n){
+  const cases={
+    1:{inactive:20,heart:74,night:0,door:0,outside:0,response:1,memo:"정상 활동 상태"},
+    2:{inactive:210,heart:78,night:0,door:0,outside:0,response:1,memo:"장시간 미활동 감지"},
+    3:{inactive:40,heart:122,night:0,door:0,outside:0,response:0,memo:"심박 이상과 무응답"},
+    4:{inactive:15,heart:82,night:1,door:1,outside:1,response:1,memo:"야간 외출 시나리오"},
+    5:{inactive:300,heart:128,night:1,door:1,outside:1,response:0,memo:"복합 고위험 시나리오"},
+    6:{inactive:50,heart:0,night:0,door:0,outside:0,response:1,memo:"센서 데이터 오류"}
+  };
+  const c=cases[n]; Object.keys(c).forEach(k=>{ if($(k)) $(k).value=c[k]; });
+  analyze();
+}
+
+function runAllTests(){
+  for(let i=1;i<=6;i++) loadCase(i);
+  alert("대표 Test Case 6건을 자동 실행하고 사건이력에 저장했습니다.");
+}
+
+function exportJSON(){
+  const blob=new Blob([JSON.stringify(events,null,2)],{type:"application/json"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="SilverGuard_event_log.json";a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+
+function resetAll(){
+  if(!confirm("사건기록을 모두 삭제할까요?"))return;
+  events=[];latestId=null;persist();renderLog();
+  $("statusBox").className="statusBox neutral";$("statusText").textContent="대기";$("scoreText").textContent="0 / 100";
+  $("reasonText").innerHTML="왼쪽에서 상태 값을 입력하고 <b>AI Agent 분석 실행</b>을 누르세요.";
+}
+
+renderLog();
+</script>
+</body>
+</html>
