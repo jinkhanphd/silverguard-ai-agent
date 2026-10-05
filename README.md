@@ -3,7 +3,7 @@
 [![SilverGuard CI](https://github.com/jinkhanphd/silverguard-ai-agent/actions/workflows/test.yml/badge.svg)](https://github.com/jinkhanphd/silverguard-ai-agent/actions/workflows/test.yml)
 
 **독거노인 실시간 위기알림 AI Agent**  
-2026 제4회 경남 AI·SW 경진대회 제출용 **Level 3 MVP**
+2026 제4회 경남 AI·SW 경진대회 제출용 **Level 3 MVP · GitHub v1.1**
 
 > **한 문장 정의**  
 > SilverGuard는 질문에 답하는 챗봇이 아니라, 독거노인의 상태 데이터를 분석하고 위험을 판단한 뒤 **Tool을 실행하고, 사건 상태를 Memory에 저장하며, 보호자 확인을 Feedback으로 반영하는 실행형 AI Agent**입니다.
@@ -27,11 +27,12 @@
 ### 3) 핵심 증거 파일
 - 핵심 판단 엔진: [`src/js/risk-engine.js`](src/js/risk-engine.js)
 - Agent 전체 제어: [`src/js/app.js`](src/js/app.js)
-- Tool: [`src/js/notification.js`](src/js/notification.js)
+- Tool: [`src/js/notification.js`](src/js/notification.js), [`src/js/sms.js`](src/js/sms.js), [`api/send-sms.js`](api/send-sms.js)
 - Memory/State: [`src/js/storage.js`](src/js/storage.js)
 - Test Case: [`src/js/test-cases.js`](src/js/test-cases.js)
 - 자동 테스트: [`tests/risk-engine.test.js`](tests/risk-engine.test.js)
 - 구조 설명: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
+- SMS 설정: [`docs/SMS_SETUP.md`](docs/SMS_SETUP.md)
 
 ---
 
@@ -44,6 +45,7 @@
 → 복합 위험판정
 → NORMAL / WARNING / DANGER
 → Browser Notification Tool 실행
+→ (선택) DANGER 시 실제 SMS Backend Tool 실행
 → 사건 Memory 저장
 → 보호자 확인 또는 재알림
 → 상태 갱신 / Feedback
@@ -58,7 +60,7 @@
 | Goal | 독거노인 위험상황 조기 감지 및 대응 연결 |
 | Planning / Action Policy | 위험등급에 따라 정상기록 / 주의알림 / 즉시알림·재확인 행동 선택 |
 | Reasoning | 통계적 기준선 편차 + 복합 위험규칙 + 위험점수 |
-| Tool Use | Browser Notification API |
+| Tool Use | Browser Notification API + 선택적 실제 SMS Backend Tool |
 | Memory / State | LocalStorage에 사건·판정·확인상태 저장 |
 | Feedback | 보호자 확인 / 미확인 재알림 / 상태 갱신 |
 
@@ -73,12 +75,12 @@
 |---|---|
 | Frontend | HTML5 / CSS3 / Vanilla JavaScript |
 | Reasoning | Statistical Baseline + Rule-based Composite Risk Score |
-| Tool | Browser Notification API |
+| Tool | Browser Notification API + 선택적 SOLAPI SMS Backend |
 | Memory / State | Web Storage(LocalStorage) |
 | Feedback | 보호자 확인 / 미확인 재알림 |
 | Test | 대표 Test Case 6건 |
-| Server | 없음 |
-| External API Key | 없음 |
+| Server | 기본 기능은 없음 / 실제 SMS 사용 시 Vercel Serverless Function |
+| External API Key | 기본 기능 없음 / SMS 사용 시 SOLAPI Key를 Vercel 환경변수로만 저장 |
 | Model Weights | 없음 |
 
 ---
@@ -158,6 +160,8 @@ GitHub Actions에서도 동일 테스트가 자동 실행됩니다.
 ```text
 silverguard-ai-agent/
 ├─ index.html
+├─ admin.html
+├─ settings.html
 ├─ README.md
 ├─ NOTICE.md
 ├─ .gitignore
@@ -174,7 +178,9 @@ silverguard-ai-agent/
 │     ├─ storage.js
 │     ├─ notification.js
 │     ├─ test-cases.js
-│     └─ app.js
+│     ├─ app.js
+│     ├─ config.js
+│     └─ sms.js
 ├─ tests/
 │  └─ risk-engine.test.js
 ├─ docs/
@@ -182,6 +188,9 @@ silverguard-ai-agent/
 │  ├─ WORKFLOW.md
 │  ├─ SAFETY_LIMITATIONS.md
 │  └─ SUBMISSION_CHECKLIST.md
+├─ api/
+│  └─ send-sms.js
+├─ package.json
 └─ offline/
    └─ SilverGuard_Offline_v0.3.html
 ```
@@ -214,17 +223,29 @@ silverguard-ai-agent/
 
 ---
 
-## 10. Source Disclosure
+## 10. v1.1 선택 기능: 관리자 대시보드 + 실제 SMS
+
+- `admin.html`: 동일 브라우저 LocalStorage 사건 이력 대시보드
+- `settings.html`: GitHub Pages 브라우저에 Backend URL만 저장
+- `api/send-sms.js`: DANGER에서만 호출되는 SOLAPI Serverless Function
+- 실제 보호자 이름·전화번호와 API Key/Secret은 공개 저장소에 저장하지 않고 Vercel Environment Variables에만 등록
+- `전체 Test Case 자동실행`에서는 실제 SMS가 발송되지 않도록 차단
+- 실제 SMS 연동 방법은 [`docs/SMS_SETUP.md`](docs/SMS_SETUP.md) 참고
+
+---
+
+## 11. Source Disclosure
 
 - 비밀키 / API Key 없음
 - 직접 학습한 모델 없음
 - 외부 모델 가중치 없음
 - 모든 핵심 위험판정 로직은 [`src/js/risk-engine.js`](src/js/risk-engine.js)에서 확인 가능
-- Browser Notification은 **로컬 브라우저/OS 알림을 이용한 MVP Tool**이며 원격 SMS·FCM 전송을 의미하지 않습니다.
+- Browser Notification은 **로컬 브라우저/OS 알림**입니다.
+- v1.1의 실제 SMS는 별도 Backend 배포 및 환경변수 설정을 완료한 경우에만 동작하며, 저장소 자체만으로는 실제 문자가 발송되지 않습니다.
 
 ---
 
-## 11. Submission Notes
+## 12. Submission Notes
 
 - 경진대회 제출용 소스는 **실행·검증 가능성**을 우선합니다.
 - 개인정보 대신 가명(예: 김OO 어르신)을 사용합니다.
@@ -233,7 +254,7 @@ silverguard-ai-agent/
 
 ---
 
-## 12. License
+## 13. License
 
 현재 제출본에는 별도의 오픈소스 라이선스를 지정하지 않았습니다.  
 공개 배포·재사용 라이선스는 권리자가 별도로 결정해야 합니다.
