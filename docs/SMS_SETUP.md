@@ -6,8 +6,9 @@ SilverGuard v1.1은 GitHub Pages 프론트엔드와 별도 Vercel Serverless Fun
 - Vercel 프로젝트: `silverguard-ai-agent`
 - Production 도메인: `https://silverguard-ai-agent.vercel.app`
 - GitHub 저장소: `jinkhanphd/silverguard-ai-agent`
-- 보호자 이름/전화번호와 허용 Origin은 Vercel Environment Variables로 등록
-- SOLAPI API Key / Secret / 등록 발신번호는 아직 사용자가 Vercel에 직접 입력해야 함
+- SOLAPI API Key / API Secret / 발신번호: Vercel Production Environment Variables에 등록
+- 보호자 이름/전화번호와 허용 Origin: Vercel Production Environment Variables에 등록
+- 실제 값은 공개 GitHub 저장소에 포함하지 않음
 
 ## 보안 원칙
 실제 보호자 이름·전화번호, SOLAPI API Key/Secret, 발신번호는 공개 GitHub 저장소에 넣지 않습니다. Vercel 프로젝트의 Environment Variables에만 입력합니다.
