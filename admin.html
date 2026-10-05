@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SilverGuard 관리자 대시보드</title><link rel="stylesheet" href="assets/css/style.css"></head>
+<body><header><div class="badge">SilverGuard v1.1</div><h1>관리자 대시보드</h1><p>동일 브라우저 LocalStorage 사건 이력 · 경진대회 MVP</p></header>
+<div class="wrap">
+<div class="toplinks"><a href="index.html">SilverGuard 실행</a><a href="settings.html">SMS 서버 설정</a></div>
+<div class="dashboardStats">
+<div class="stat"><b id="total">0</b><span>전체 사건</span></div>
+<div class="stat"><b id="danger">0</b><span>DANGER</span></div>
+<div class="stat"><b id="unconfirmed">0</b><span>미확인</span></div>
+<div class="stat"><b id="smsSent">0</b><span>SMS SENT</span></div>
+</div>
+<section class="card"><h2>사건 관리</h2><div class="pad">
+<div class="notice"><b>MVP 범위</b><br>현재 관리자 대시보드는 동일 브라우저의 LocalStorage를 조회합니다. 실제 원격 관리자·다중기기 운영에는 서버 DB가 추가로 필요합니다.</div>
+<div class="actions"><button class="secondary" onclick="render()">새로고침</button><button class="secondary" onclick="exportJSON()">JSON 내보내기</button></div>
+<div class="tableWrap"><table><thead><tr><th>시간</th><th>대상자</th><th>등급</th><th>점수</th><th>판단근거</th><th>브라우저</th><th>SMS</th><th>확인</th></tr></thead><tbody id="rows"></tbody></table></div>
+</div></section></div>
+<script src="src/js/storage.js"></script>
+<script>
+const esc=s=>String(s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+SilverGuardStorage.load();
+function render(){const e=SilverGuardStorage.all();document.getElementById("total").textContent=e.length;document.getElementById("danger").textContent=e.filter(x=>x.level==="DANGER").length;document.getElementById("unconfirmed").textContent=e.filter(x=>x.confirmStatus==="미확인").length;document.getElementById("smsSent").textContent=e.filter(x=>x.smsStatus==="SENT").length;document.getElementById("rows").innerHTML=e.map(x=>`<tr><td>${x.time}</td><td>${esc(x.data?.name)}</td><td><span class="tag ${x.level}">${x.level}</span></td><td>${x.score}</td><td>${esc((x.reasons||[]).join(", "))}</td><td>${esc(x.notifyStatus)}</td><td>${esc(x.smsStatus||"NOT_REQUESTED")}</td><td>${esc(x.confirmStatus)}</td></tr>`).join("");}
+function exportJSON(){const blob=new Blob([JSON.stringify(SilverGuardStorage.all(),null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="SilverGuard_admin_events.json";a.click();}
+render();setInterval(render,5000);
+</script></body></html>
