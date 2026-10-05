@@ -5,12 +5,22 @@ on:
   pull_request:
 
 jobs:
-  risk-engine-test:
+  verify:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Syntax check browser and API JavaScript
+        run: |
+          node --check src/js/risk-engine.js
+          node --check src/js/storage.js
+          node --check src/js/notification.js
+          node --check src/js/config.js
+          node --check src/js/sms.js
+          node --check src/js/test-cases.js
+          node --check src/js/app.js
+          node --check api/send-sms.js
       - name: Run risk engine tests
         run: node tests/risk-engine.test.js
