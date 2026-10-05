@@ -9,12 +9,16 @@
 </head>
 <body>
 <header>
-  <div class="badge">AI·SW 경진대회 2026 · GitHub Edition v1.0</div>
+  <div class="badge">AI·SW 경진대회 2026 · GitHub Edition v1.1</div>
   <h1>SilverGuard — 독거노인 실시간 위기알림 AI Agent</h1>
   <p>상태 입력 → 이상징후 분석 → 위험도 판단 → 알림 Tool 실행 → 보호자 확인 → 사건 상태 갱신</p>
 </header>
 
 <div class="wrap">
+  <div class="toplinks">
+    <a href="admin.html">관리자 대시보드</a>
+    <a href="settings.html">SMS 서버 설정</a>
+  </div>
   <div class="grid">
     <section class="card">
       <h2>1. 상태 데이터 입력</h2>
@@ -35,6 +39,13 @@
         </div>
         <label>비고/상황 메모</label>
         <textarea id="memo" rows="3" placeholder="예: 평소 아침 산책 시간인데 움직임 없음"></textarea>
+
+        <div class="smsPanel">
+          <label class="toggleLine"><input id="smsEnabled" type="checkbox"> 실제 보호자 SMS 발송 활성화</label>
+          <div class="small">기본값 OFF · DANGER에서만 발송 · 전체 자동 Test Case에서는 SMS를 발송하지 않습니다.</div>
+          <div id="smsState" class="small">SMS Backend: 미설정/확인 전</div>
+        </div>
+
         <div class="actions">
           <button class="primary" onclick="analyze()">AI Agent 분석 실행</button>
           <button class="secondary" onclick="requestNotify()">브라우저 알림 허용</button>
@@ -70,7 +81,7 @@
             <div class="step"><b>① Goal</b><small>독거노인 위험상황을 조기 감지하고 보호자에게 알림</small></div>
             <div class="step"><b>② Data</b><small>미활동·심박·야간·문열림·외출·응답 데이터</small></div>
             <div class="step"><b>③ Reasoning</b><small>기준선 편차 + 복합 위험규칙 + 위험점수 산정</small></div>
-            <div class="step"><b>④ Tool Use</b><small>Browser Notification API로 로컬 브라우저/OS 알림 실행</small></div>
+            <div class="step"><b>④ Tool Use</b><small>Browser Notification + 선택적 SMS Backend Tool</small></div>
             <div class="step"><b>⑤ Memory</b><small>사건·판정·확인여부를 브라우저 LocalStorage에 저장</small></div>
             <div class="step"><b>⑥ Feedback</b><small>보호자 확인 또는 미확인 재알림으로 상태 갱신</small></div>
           </div>
@@ -95,10 +106,11 @@
           <div class="actions" style="margin:0 0 10px">
             <button class="secondary" onclick="exportJSON()">사건기록 JSON 내보내기</button>
             <button class="secondary" onclick="runAllTests()">전체 Test Case 자동실행</button>
+            <a class="buttonlink" href="admin.html">관리자 대시보드 열기</a>
           </div>
           <div class="tableWrap">
             <table>
-              <thead><tr><th>시간</th><th>대상자</th><th>등급</th><th>점수</th><th>판단근거</th><th>알림</th><th>확인</th></tr></thead>
+              <thead><tr><th>시간</th><th>대상자</th><th>등급</th><th>점수</th><th>판단근거</th><th>브라우저 알림</th><th>SMS</th><th>확인</th></tr></thead>
               <tbody id="logBody"></tbody>
             </table>
           </div>
@@ -107,11 +119,13 @@
     </main>
   </div>
 </div>
-<footer>SilverGuard GitHub Edition v1.0 · HTML/CSS/Vanilla JavaScript · 서버 설치 불필요 · 경진대회/교육용 MVP</footer>
+<footer>SilverGuard GitHub Edition v1.1 · HTML/CSS/Vanilla JavaScript · SMS는 별도 Backend 설정 시 사용 · 경진대회/교육용 MVP</footer>
 
 <script src="src/js/risk-engine.js"></script>
 <script src="src/js/storage.js"></script>
 <script src="src/js/notification.js"></script>
+<script src="src/js/config.js"></script>
+<script src="src/js/sms.js"></script>
 <script src="src/js/test-cases.js"></script>
 <script src="src/js/app.js"></script>
 </body>
