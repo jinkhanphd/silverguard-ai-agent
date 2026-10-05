@@ -1,6 +1,6 @@
 # SilverGuard Architecture
 
-**독거노인 실시간 위기알림 AI Agent · GitHub v1.0**
+**독거노인 실시간 위기알림 AI Agent · GitHub v1.1**
 
 > 이 문서는 심사위원이 SilverGuard의 **Goal → Data → Reasoning → Tool → Memory → Feedback** 구조와 실제 소스 위치를 빠르게 검증할 수 있도록 정리한 기술 아키텍처 문서입니다.
 
@@ -10,9 +10,9 @@
 
 SilverGuard는 독거노인의 상태 데이터를 입력받아 유효성을 확인하고, 통계적 이상징후와 복합 위험규칙을 이용해 위험도를 판단한 뒤 필요한 행동을 선택하는 경진대회용 AI Agent MVP입니다.
 
-위험상황에서는 **로컬 Browser Notification API를 Tool로 호출**하고, 사건과 판정 결과를 **LocalStorage에 Memory/State로 저장**합니다. 이후 보호자의 확인 또는 미확인 재알림을 Feedback으로 받아 사건 상태를 갱신합니다.
+위험상황에서는 **로컬 Browser Notification API를 Tool로 호출**하고, v1.1에서 사용자가 명시적으로 활성화하고 Backend가 설정된 경우 **DANGER에 한해 실제 SMS Backend Tool**을 추가 호출할 수 있습니다. 사건과 판정 결과는 **LocalStorage에 Memory/State로 저장**합니다. 이후 보호자의 확인 또는 미확인 재알림을 Feedback으로 받아 사건 상태를 갱신합니다.
 
-> 현재 버전은 의료진단 시스템이 아니며, 원격 SMS·FCM·119 자동전송을 구현한 시스템도 아닙니다.
+> 현재 버전은 의료진단 시스템이 아닙니다. 실제 SMS는 선택 기능이며 별도 Backend와 환경변수 설정이 완료된 경우에만 동작합니다. FCM·119 자동전송은 구현하지 않았습니다.
 
 ---
 
@@ -29,8 +29,10 @@ flowchart LR
     E -->|DANGER| H[즉시 알림 정책]
     G --> I[Browser Notification API]
     H --> I
+    H --> S[Optional SMS Backend<br/>Vercel + SOLAPI]
     F --> J[LocalStorage Memory]
     I --> J
+    S --> J
     J --> K[Guardian Feedback]
     K -->|확인/조치완료| L[State Update]
     K -->|미확인| M[Retry Alert]
@@ -73,7 +75,7 @@ LocalStorage 사건 Memory 저장
 | Goal | 독거노인 위험상황 조기 감지 및 대응 연결 | `index.html`, `src/js/app.js` |
 | Planning / Action Policy | 위험등급에 따라 정상기록, 주의알림, 즉시알림, 재확인 행동 선택 | `src/js/risk-engine.js` |
 | Reasoning | 기준선 편차 + 복합 위험규칙 + 위험점수 | `src/js/risk-engine.js` |
-| Tool Use | Browser Notification API 호출 | `src/js/notification.js` |
+| Tool Use | Browser Notification API + 선택적 실제 SMS Backend 호출 | `src/js/notification.js`, `src/js/sms.js`, `api/send-sms.js` |
 | Memory / State | 사건·판정·알림·확인 상태를 LocalStorage에 저장 | `src/js/storage.js` |
 | Feedback | 보호자 확인/조치완료 또는 미확인 재알림 | `src/js/app.js` |
 
@@ -165,13 +167,14 @@ Reasoning 결과에 따라 Agent가 다음 행동을 선택합니다.
 
 ## 6. Tool Layer
 
-`src/js/notification.js`가 Tool 계층을 담당합니다.
+`src/js/notification.js`와 `src/js/sms.js`가 프론트 Tool 계층을 담당하고, 실제 SMS는 `api/send-sms.js` Serverless Function이 처리합니다.
 
 - Browser Notification API 사용
+- 실제 SMS 선택 기능: Vercel Serverless Function → SOLAPI
 - 사용자가 알림 권한을 허용한 경우 로컬 브라우저/OS 알림 생성
 - 권한 제한 시에도 Agent의 판단 및 사건기록은 계속 동작
 
-> 현재 Tool은 실제 원격 보호자 SMS/FCM 전송이 아니라 **보호자 알림을 가정한 로컬 MVP Tool**입니다.
+> Browser Notification은 로컬 MVP Tool입니다. v1.1에서는 별도 Backend를 배포하고 환경변수를 설정하면 DANGER 사건에 대해 실제 보호자 SMS를 선택적으로 발송할 수 있습니다. 자동 Test Case에서는 실제 SMS를 발송하지 않습니다.
 
 ---
 
@@ -219,6 +222,11 @@ Reasoning 결과에 따라 Agent가 다음 행동을 선택합니다.
 | `assets/css/style.css` | 화면 레이아웃 및 상태 시각화 |
 | `src/js/risk-engine.js` | 데이터검증, 이상징후, 위험점수, 등급, Action Policy |
 | `src/js/notification.js` | Browser Notification Tool |
+| `src/js/config.js` | SMS Backend URL의 브라우저 로컬 설정 |
+| `src/js/sms.js` | DANGER 사건 SMS Backend 호출 |
+| `api/send-sms.js` | SOLAPI 실제 SMS Serverless Function |
+| `admin.html` | 동일 브라우저 사건 관리자 대시보드 |
+| `settings.html` | SMS Backend URL 설정 |
 | `src/js/storage.js` | LocalStorage 기반 Memory / State |
 | `src/js/test-cases.js` | 대표 Test Case 6건 정의 |
 | `src/js/app.js` | UI와 Reasoning/Tool/Memory/Feedback 모듈 연결 |
@@ -250,7 +258,7 @@ node tests/risk-engine.test.js
 
 ## 11. Trust Boundary / 보안 범위
 
-현재 v1.0은 브라우저 단일 사용자 MVP입니다.
+현재 v1.1의 핵심 Memory는 브라우저 단일 사용자 MVP입니다. 관리자 대시보드 역시 동일 브라우저 LocalStorage를 조회합니다.
 
 구현하지 않은 범위:
 
@@ -259,7 +267,8 @@ node tests/risk-engine.test.js
 - DB 서버
 - 개인정보 암호화 저장
 - 실센서/웨어러블 연동
-- 실제 SMS/FCM/119 자동전송
+- 실제 SMS는 선택적으로 가능하나 Backend 배포 필요
+- FCM/119 자동전송
 - 고가용성/장애복구
 - 의료적 임상검증
 
@@ -282,7 +291,7 @@ node tests/risk-engine.test.js
 
 ## 13. 핵심 한계
 
-SilverGuard v1.0은 **실제 의료 서비스가 아니라 AI Agent 구조를 검증하는 경진대회용 MVP**입니다.
+SilverGuard v1.1은 **실제 의료 서비스가 아니라 AI Agent 구조를 검증하는 경진대회용 MVP**입니다.
 
 실제 현장 적용 전에는 실센서 연동, 사용자 인증, 개인정보 보호, 복지기관 시스템 연계, 반복 실증, 의료·응급대응 절차 검토가 필요합니다.
 
