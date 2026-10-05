@@ -17,7 +17,10 @@
         })
       });
       const data=await res.json().catch(()=>({}));
-      if(!res.ok) return {ok:false,message:data.error||("HTTP "+res.status)};
+      if(!res.ok){
+        const parts=[data.error,data.detail,data.statusCode,data.statusMessage].filter(Boolean);
+        return {ok:false,message:parts.join(" / ") || ("HTTP "+res.status)};
+      }
       return {ok:true,message:"SENT",provider:data.provider||"SOLAPI"};
     }catch(err){
       return {ok:false,message:"Backend 연결 실패"};
