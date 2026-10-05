@@ -19,6 +19,21 @@ function configStatus(){
   };
 }
 
+function safeProviderError(err){
+  const failed = Array.isArray(err?.failedMessageList) ? err.failedMessageList[0] : null;
+  const statusCode = failed?.statusCode || err?.statusCode || err?.code || null;
+  const statusMessage = failed?.statusMessage || err?.statusMessage || null;
+  const detail = String(
+    statusMessage ||
+    err?.errorMessage ||
+    err?.response?.data?.error?.message ||
+    err?.response?.data?.message ||
+    err?.message ||
+    "SMS provider send failed"
+  ).slice(0,300);
+  return {statusCode,statusMessage,detail};
+}
+
 module.exports=async function handler(req,res){
   cors(req,res);
   if(req.method==="OPTIONS") return res.status(204).end();
@@ -53,10 +68,21 @@ module.exports=async function handler(req,res){
       from:process.env.SOLAPI_FROM.replace(/[^0-9]/g,""),
       text
     });
+
+    const failed = Array.isArray(result?.failedMessageList) ? result.failedMessageList[0] : null;
+    if(failed){
+      return res.status(502).json({
+        error:"SMS provider rejected message",
+        statusCode:failed.statusCode||null,
+        statusMessage:failed.statusMessage||null,
+        detail:failed.statusMessage||"Message registration failed"
+      });
+    }
+
     return res.status(200).json({ok:true,provider:"SOLAPI",result});
   }catch(err){
     console.error("SOLAPI send failed",err);
-    const detail=String(err?.message||err?.errorMessage||"SMS provider send failed").slice(0,300);
-    return res.status(502).json({error:"SMS provider send failed",detail});
+    const info=safeProviderError(err);
+    return res.status(502).json({error:"SMS provider send failed",...info});
   }
 };
