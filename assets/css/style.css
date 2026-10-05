@@ -53,3 +53,14 @@ th{background:#f1f6fd;color:#27466d}
 @media(max-width:760px){.tests{grid-template-columns:1fr}}
 .testbtn{background:#f3f7fd;border:1px solid #d6e4f7;text-align:left;color:#173f77}
 footer{max-width:1450px;margin:0 auto;padding:0 18px 28px;color:#728199;font-size:12px}
+
+.toplinks{max-width:1450px;margin:0 auto 12px;display:flex;gap:10px;flex-wrap:wrap}
+.toplinks a,.buttonlink{display:inline-block;text-decoration:none;background:#e8f1ff;color:#174a97;border-radius:10px;padding:10px 13px;font-weight:800}
+.smsPanel{margin-top:14px;padding:12px;border:1px solid #c9dcf6;background:#f8fbff;border-radius:10px}
+.toggleLine{display:flex;align-items:center;gap:8px;margin:0 0 4px}
+.toggleLine input{width:auto}
+.dashboardStats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+.stat{background:white;border:1px solid #c9dcf6;border-radius:14px;padding:18px;text-align:center}
+.stat b{display:block;font-size:30px;color:#0a2f6b}.stat span{font-size:12px;color:#65758b}
+.narrow{max-width:800px}
+@media(max-width:760px){.dashboardStats{grid-template-columns:repeat(2,1fr)}}
