@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SilverGuard SMS 설정</title><link rel="stylesheet" href="assets/css/style.css"></head>
+<body><header><div class="badge">SilverGuard v1.1</div><h1>SMS Backend 설정</h1><p>공개 GitHub에는 API Key·보호자 전화번호를 저장하지 않습니다.</p></header>
+<div class="wrap narrow"><div class="toplinks"><a href="index.html">SilverGuard 실행</a><a href="admin.html">관리자 대시보드</a></div>
+<section class="card"><h2>Backend URL</h2><div class="pad">
+<label>Vercel Backend URL</label><input id="apiBase" placeholder="예: https://silverguard-api.vercel.app">
+<div class="small">GitHub Pages에서 실제 SMS를 보내려면 배포한 Backend URL을 이 브라우저에만 저장합니다.</div>
+<div class="actions"><button class="primary" onclick="save()">저장</button><button class="secondary" onclick="clearConfig()">삭제</button></div>
+<div class="notice"><b>보안 원칙</b><br>SOLAPI API Key, Secret, 발신번호, 보호자 이름/전화번호는 이 화면이나 GitHub에 입력하지 않고 Vercel 환경변수로만 등록하세요.</div>
+</div></section></div>
+<script src="src/js/config.js"></script><script>
+const el=document.getElementById("apiBase");el.value=SilverGuardConfig.apiBase();
+function save(){SilverGuardConfig.setApiBase(el.value);alert("Backend URL을 이 브라우저에 저장했습니다.");}
+function clearConfig(){SilverGuardConfig.setApiBase("");el.value="";alert("설정을 삭제했습니다.");}
+</script></body></html>
